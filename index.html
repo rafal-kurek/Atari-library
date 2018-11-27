@@ -1,0 +1,194 @@
+<html ng-app="myApp">
+
+<head>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.6.6/angular.min.js"></script>
+    <meta charset="utf-8" />
+    <title>Czasopisma Atari</title>
+    <style>
+        #poj1 {
+            margin: 0 auto;
+            width: 400px;
+        }
+
+        #poj2 {
+            margin: 0 auto;
+            width: 60%;
+
+        }
+
+        #lewa {
+            float: left;
+        }
+
+        #prawa {
+            float: right;
+        }
+
+        .rok {
+            background-color: #CCCCCC;
+            border: solid black 1px;
+        }
+
+        #cofnij {
+            text-align: center;
+            border-top: black 1px solid;
+            border-bottom: black 1px solid;
+        }
+
+    </style>
+    <script>
+        var myApp = angular.module("myApp", []);
+        myApp.controller("appController", function($scope, $http) {
+            
+            //wyszukanie nazw czasopism w XML i wyświetlenie ich na stronie
+            $http({
+                method: 'GET',
+                url: 'ajax.php',
+                params: {
+                    action: "czas"
+                }
+            }).then(function successCallback(response) {
+                $scope.dane = response.data;
+            })
+            
+            //zmienne pomocnicze ukrywające lub wyświetlające divy na dane
+            $scope.tytul
+            $scope.poj1 = true
+            $scope.poj2 = false
+            $scope.info1 = false
+            $scope.info2 = false
+            
+            //funkcje, które wysyłają zapytania o węzły w pliku XML do serwerowej części (ajax.php)
+
+            $scope.wiecej = function wiecej(nazwa) {
+                $scope.tytul = nazwa
+                $scope.poj1 = false
+                $scope.poj2 = true
+                $http({
+                    method: 'GET',
+                    url: 'ajax.php',
+                    params: {
+                        action: "lata",
+                        czasopismo: nazwa
+                    }
+                }).then(function successCallback(response) {
+                    $scope.lata = response.data[0][0].split(",")
+                })
+            }
+
+
+            $scope.tresc = function tresc(rok) {
+
+                $http({
+                    method: 'GET',
+                    url: 'ajax.php',
+                    params: {
+                        action: "tresc",
+                        tytul: $scope.tytul,
+                        rok: rok
+                    }
+                }).then(function successCallback(response) {
+                    $scope.szczegoly = response.data;
+                    console.log($scope.szczegoly)
+                    $scope.info2 = false
+                    $scope.info1 = true
+
+                })
+
+
+            }
+
+
+            $scope.cofnij = function cofnij() {
+                $scope.poj2 = false
+                $scope.info1 = false
+                $scope.info2 = false
+                $scope.poj1 = true
+            }
+
+            $scope.all = function all() {
+                $http({
+                    method: 'GET',
+                    url: 'ajax.php',
+                    params: {
+                        action: "all",
+                        tytul: $scope.tytul
+                    }
+                }).then(function successCallback(response) {
+
+                    $scope.wszystko = response.data;
+                    console.log($scope.wszystko)
+                    $scope.info1 = false
+                    $scope.info2 = true
+
+                })
+            }
+
+
+        })
+
+    </script>
+</head>
+
+<body ng-controller="appController">
+    <div id="poj1" ng-show="poj1">
+        <div id="lewa">
+            <div ng-repeat="x in dane" ng-if="$index%2==0">
+                <img ng-click="wiecej(x.klik)" ng-src="http://atarionline.pl/biblioteka/czasopisma/img/{{x.src}}" />
+            </div>
+        </div>
+        <div id="prawa">
+            <div ng-repeat="x in dane" ng-if="$index%2!==0">
+                <img ng-click="wiecej(x.klik)" ng-src="http://atarionline.pl/biblioteka/czasopisma/img/{{x.src}}" />
+            </div>
+        </div>
+    </div>
+    <div id="poj2" ng-show="poj2">
+        <div id="roczniki">
+            <table>
+                <tr>
+                    <td ng-repeat="x in lata" class="rok" ng-click="tresc(x)">{{x}}</td>
+                    <td class="rok" ng-click="all()">wszystkie</td>
+                </tr>
+            </table>
+
+            <table border="1" id="info1" ng-show="info1">
+                <tr>
+                    <th>strona tytułowa</th>
+                    <th>plik</th>
+                    <th>pismo</th>
+                    <th>darczyńcy</th>
+                </tr>
+                <tr ng-repeat="x in szczegoly">
+                    <td ng-if="x.nazwa == undefined">brak</td>
+                    <td colspan="3" ng-if="x.miniaturka == undefined">{{x['@attributes'].brak}}</td>
+                    <td ng-if="x.nazwa !== undefined"><img ng-src="http://atarionline.pl/biblioteka/czasopisma/{{tytul}}/{{x.miniaturka}}" /></td>
+                    <td ng-if="x.nazwa !== undefined">format: <br /> <b>{{x.format}}</b><br /> stron: <br /> <b>{{x.stron}}</b> <br /> plik: <br /> <a ng-href="http://atarionline.pl/biblioteka/czasopisma/{{tytul}}/{{x.plik}}" target="_blank">tutaj</a></td>
+                    <td ng-if="x.nazwa !== undefined">nazwa: <br /> <b>{{x.nazwa}}</b> <br /> numer: <br /> <b>{{x.numer}}</b> <br /> wydawca: <br /> <b>{{x.wydawca}}</b> </td>
+                    <td ng-if="x.nazwa !== undefined">skan: <br /> <b>{{x.skan}}</b> <br /> przetworzenie: <br /> <b>{{x.przetworzenie}}</b> <br /> podesłał: <br /> <b>{{x.podeslal}}</b> </td>
+                </tr>
+            </table>
+
+            <table border="1" id="info2" ng-show="info2">
+                <tr>
+                    <th>strona tytułowa</th>
+                    <th>plik</th>
+                    <th>pismo</th>
+                    <th>darczyńcy</th>
+                </tr>
+                <tr ng-repeat="x in wszystko">
+                    <td ng-if="x.nazwa == undefined">brak</td>
+                    <td colspan="3" ng-if="x.miniaturka == undefined">{{x['@attributes'].brak}}</td>
+                    <td ng-if="x.nazwa !== undefined"><img ng-src="http://atarionline.pl/biblioteka/czasopisma/{{tytul}}/{{x.miniaturka}}" /></td>
+                    <td ng-if="x.nazwa !== undefined">format: <br /> <b>{{x.format}}</b><br /> stron: <br /> <b>{{x.stron}}</b> <br /> plik: <br /> <a ng-href="http://atarionline.pl/biblioteka/czasopisma/{{tytul}}/{{x.plik}}" target="_blank">tutaj</a></td>
+                    <td ng-if="x.nazwa !== undefined">nazwa: <br /> <b>{{x.nazwa}}</b> <br /> numer: <br /> <b>{{x.numer}}</b> <br /> wydawca: <br /> <b>{{x.wydawca}}</b> </td>
+                    <td ng-if="x.nazwa !== undefined">skan: <br /> <b>{{x.skan}}</b> <br /> przetworzenie: <br /> <b>{{x.przetworzenie}}</b> <br /> podesłał: <br /> <b>{{x.podeslal}}</b> </td>
+                </tr>
+            </table>
+
+        </div>
+        <div id="cofnij"><b>cofnij</b><img src="back.gif" ng-click="cofnij()" /></div>
+    </div>
+</body>
+
+</html>
