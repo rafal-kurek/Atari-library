@@ -4,7 +4,7 @@ $xml=simplexml_load_file("czas.xml");
   
 if(isset($_GET['action'])){
   
-    //wyszukanie i zwrócenie fraz w XML szukanych przez klienta na podstawie jego żądań
+    //wyszukanie i zwrócenie węzłów w XML szukanych przez klienta na podstawie jego żądań
   switch ($_GET['action']) {
     case "czas":
         $result = $xml->xpath("/czasopisma/zmienne/*");
